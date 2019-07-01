@@ -1,11 +1,11 @@
+import sys
 import json
 import geopandas
 import pandas as pd
 import numpy as np
 import disarm_gears
-import uuid
 import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 
 def run_function(params: dict):
@@ -89,6 +89,7 @@ def run_function(params: dict):
                                                     weights=None, method='fREML', bam=True, chunk_size=20000)
 
     # Make predictions and simulations
+    n_samples = 500
     y_pred = disarm_gears.r_plugins.r_methods.mgcv_predict(gam, data=pred_grid, response_type='response')
     y_sims = disarm_gears.r_plugins.r_methods.mgcv_posterior_samples(gam, data=pred_grid, n_samples=n_samples,
                                                                      response_type='link')
@@ -101,7 +102,6 @@ def run_function(params: dict):
     pred_grid['total_cases'] = y_pred
     pred_grid['incidence'] = phi
 
-    n_samples = 500
     prob_cases = np.sum(y_sims + np.log(pred_grid.population[None, :]) >= 0, axis=0) / n_samples
     risk_class = np.zeros_like(prob_cases)
     for i, pi in enumerate([.1, .25, .5, .75, .975]):
