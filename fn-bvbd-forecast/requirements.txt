@@ -1,0 +1,9 @@
+git+git://github.com/disarm-platform/disarm-gears.git@v0.2.6
+numpy
+matplotlib
+pandas
+sklearn
+pygam
+descartes
+requests
+rpy2
