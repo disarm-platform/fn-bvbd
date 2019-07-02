@@ -1,11 +1,12 @@
 import sys
 import json
+import urllib.request
 import geopandas
 import pandas as pd
 import numpy as np
 import disarm_gears
-import requests
 from datetime import timedelta
+import requests
 
 
 def run_function(params: dict):
@@ -30,13 +31,25 @@ def run_function(params: dict):
     #
 
     # Load stored data
-    tha_shp = geopandas.GeoDataFrame.from_file('help_data/tha_villages/tha_villages.shp')
-    #tha_attrib = pd.read_csv('help_data/tha_pred_points.csv')
-    tha_attrib = pd.read_csv('help_data/tha_attrib_covs.csv')
+    #tha_attrib = pd.read_csv('help_data/tha_attrib_covs.csv')
+    #tha_shp = geopandas.GeoDataFrame.from_file('help_data/tha_villages/tha_villages.shp')
+
+    link_1 = 'https://www.dropbox.com/s/ab7i0ynbn2ei77z/tha_attrib_covs.json?dl=1'
+    link_2 = 'https://www.dropbox.com/s/vmqdc53olbv2j70/tha_shp.json?dl=1'
+
+    with urllib.request.urlopen(link_1) as url:
+        tha_attrib = pd.read_json(json.loads(url.read().decode()))
+    tha_attrib.sort_index(inplace=True)
+
+    with urllib.request.urlopen(link_2) as url:
+        _shp = json.loads(url.read().decode())
+    tha_shp = geopandas.GeoDataFrame.from_features(json.loads(_shp))
+
 
     # Add covariates to the attributes table
-    #if layer_names is not None:
-    if False:
+    # At the moment the covariates are already loaded through tha_attrib_covs.csv
+    '''
+    if layer_names is not None:
         # Call fn-covariate-extractor
         open_faas_link = 'http://faas.srv.disarm.io/function/fn-covariate-extractor'
         req_options = {
@@ -54,12 +67,13 @@ def run_function(params: dict):
 
         # Merge output into input_data
         tha_attrib = pd.concat([tha_attrib, covs_data], axis=1)
+    '''
 
     # Define timeline and spatiotemporal grid
     tha_frame = disarm_gears.frames.TilePattern(geometries=tha_shp.geometry, attributes=tha_attrib)
     timeline = disarm_gears.frames.Timeframe(start=None, end=end_date, length=observed_periods, by='day', step=28)
     spacetime_grid = tha_frame.make_attributes_series(knots=np.arange(observed_periods), var_name='knot')
-    pred_grid = tha_frame.make_attributes_series(knots=np.array([6]), var_name='knot')
+    pred_grid = tha_frame.make_attributes_series(knots=np.array([observed_periods]), var_name='knot')
 
     # Make a GeoPandas DataFrame from input data
     input_data = geopandas.GeoDataFrame.from_features(point_data['features'])
