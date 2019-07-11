@@ -17,10 +17,6 @@ def run_function(params: dict):
     # Set random seed
     np.random.seed(1000)
 
-    # redirecting STDOUT to avoid over-chatty packages/libraries
-    original = sys.stdout
-    sys.stdout = open('dummy-stdout-file', 'w')
-
     end_date = params.get('end_date')
     observed_periods = params.get('observed_periods')
     point_data = params.get('point_data')
@@ -127,9 +123,6 @@ def run_function(params: dict):
 
     output_gdf = geopandas.GeoDataFrame(pred_grid, geometry=geopandas.points_from_xy(pred_grid.lng, pred_grid.lat))
     slimmer_gdf = output_gdf.drop(['lat', 'lng', 'knot', 'population'], axis=1)
-
-    # Restore STDOUT
-    sys.stdout = original
 
     # return response.get('point_data')
     return json.loads(slimmer_gdf.to_json())
