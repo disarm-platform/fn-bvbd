@@ -20,9 +20,9 @@ ENV fprocess="python index.py"
 # Set to true to see request in function logs
 # ENV combine_output='false'
 # ENV write_debug="true"
-# ENV write_timeout=0
-# ENV read_timeout=0
-# ENV exec_timeout=0
+ENV write_timeout=600
+ENV read_timeout=600
+ENV exec_timeout=600
 
 EXPOSE 8080
 
