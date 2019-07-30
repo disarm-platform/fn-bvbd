@@ -1,4 +1,3 @@
-import sys
 import json
 import urllib.request
 import geopandas
@@ -7,7 +6,6 @@ import numpy as np
 import disarm_gears
 from datetime import timedelta
 from scipy.spatial import distance_matrix
-import requests
 
 
 def run_function(params: dict):
