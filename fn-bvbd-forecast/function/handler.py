@@ -84,12 +84,21 @@ def run_function(params: dict):
             polyg_series.loc[np.logical_and(polyg_series.index == rowi.village_id,
                                             polyg_series.knot == rowi.knot), 'total_cases'] += rowi.total_cases
         pred_grid_i = polyg_data_i.copy()
-        pred_grid_i['knot'] = observed_periods
+        pred_grid_i['knot'] = observed_periods - 1# We subtract 1 because we are not making forecast
 
         # Candidate GAM models
+        gam_flist = [f"total_cases ~ offset(log(population)) + te(lng, lat, bs='gp', m=list(c(2, -1, 2)), d=2, k=25)"]
+        if observed_periods > 1:
+            gam_flist += [f"total_cases ~ offset(log(population)) + te(lng, lat, by=knot, bs='gp', m=list(c(2, -1, 2)), d=2, k=25)"]
+        if observed_periods > 2:
+            gam_flist += [f"total_cases ~ offset(log(population)) + te(lng, lat, knot, bs='gp', m=list(c(2, 2, 2), c(2, 1.5, 2)), d=c(2, 1), k=c(25, 3))"]
+        if layer_names is not None:
+            gam_flist += ['+'.join([gf] + [f'{i}' for i in layer_names]) for gf in gam_flist]
+        '''
         gam_flist = []
         gam_sp = f"total_cases ~ offset(log(population)) + te(lng, lat, bs='gp', m=list(c(2, -1, 2)), d=2, k=25)"
         gam_flist.append(gam_sp)
+
         if layer_names is not None:
             gam_spc = [gam_sp] + [f'{i}' for i in layer_names]
             gam_spc = '+'.join(gam_spc)
@@ -101,8 +110,7 @@ def run_function(params: dict):
             gam_stc = [gam_st] + [f'{i}' for i in layer_names]
             gam_stc = '+'.join(gam_stc)
             gam_flist.append(gam_stc)
-
-
+        '''
         # Fit candidate models and keep the best
         for j, gam_formula in enumerate(gam_flist):
             gam_j = disarm_gears.r_plugins.r_methods.mgcv_fit(data=polyg_series, formula=gam_formula,
