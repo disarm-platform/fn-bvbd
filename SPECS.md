@@ -8,7 +8,7 @@ The function requires an input file with positive cases only. Villages with no
 cases reported in the input file will be considered as having zero cases.
 
 When processing the data, the number of cases are aggregated by village in
-periods of four weeks. That is how they should be reported in the input file.
+periods of four weeks.
 
 This function depends on a pre-defined framework of village locations, their
 population and bioclimate data.
