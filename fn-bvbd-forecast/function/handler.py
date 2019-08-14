@@ -26,11 +26,28 @@ def run_function(params: dict):
     #
 
     # Load stored data
+    # NOTE: At the moment the covariates are already loaded through tha_attrib_covs.csv
     link_1 = 'https://www.dropbox.com/s/ab7i0ynbn2ei77z/tha_attrib_covs.json?dl=1'
     with urllib.request.urlopen(link_1) as url:
         tha_attrib = pd.read_json(json.loads(url.read().decode()))
     tha_attrib.dropna(axis=0, inplace=True)  # Some covariates are NA
     tha_attrib.reset_index(inplace=True, drop=True)
+
+    # Format point data
+    gdf = geopandas.GeoDataFrame.from_features(json.loads(point_data))
+    input_xy = np.vstack([gdf.geometry.x, gdf.geometry.y]).T
+    dmat = distance_matrix(input_xy, tha_attrib[['lng', 'lat']])
+    gdf['village_id'] = [di.argmin() for di in dmat]
+    gdf.set_index('village_id', inplace=True)
+
+    parts = []
+    for i, gi in gdf.iterrows():
+        dfi = pd.DataFrame.from_dict(json.loads(gi.features))
+        dfi['lng'] = gi.geometry.x
+        dfi['lat'] = gi.geometry.y
+        dfi['village_id'] = gi.name
+        parts.append(dfi)
+    input_data = pd.concat(parts)
 
     # Define prediction grid
     pred_grid = tha_attrib.copy()
@@ -39,19 +56,10 @@ def run_function(params: dict):
     pred_grid['prob_cases'] = np.nan
     pred_grid['risk_class'] = np.nan
 
-    # Add covariates to the attributes table
-    # At the moment the covariates are already loaded through tha_attrib_covs.csv
-
     # Define timeline and spatiotemporal grid
     timeline = disarm_gears.frames.Timeframe(start=None, end=end_date, length=observed_periods, by='day', step=28)
-    input_data = geopandas.GeoDataFrame.from_features(point_data['features'])
     input_data['knot'] = timeline.which_knot(np.array(input_data.date))
     input_data = input_data.loc[input_data.knot > -1, :]
-    input_data['village_id'] = -1
-    input_data['lng'] = input_data.geometry.x
-    input_data['lat'] = input_data.geometry.y
-    input_xy = np.vstack([input_data.geometry.x, input_data.geometry.y]).T
-    input_data.drop(labels=['geometry'], axis=1, inplace=True)
 
     # Define polygons of observed cases
     G = disarm_gears.frames.SparseGrid(x_lim=(97, 106), y_lim=(5, 21), n_cols=9, n_rows=16, tag_prefix='G')
@@ -72,10 +80,6 @@ def run_function(params: dict):
         polyg_series['knot'] = np.hstack([np.repeat(ki, polyg_data_i.shape[0]) for ki in np.arange(observed_periods)])
         polyg_series['total_cases'] = 0
 
-        dmat = distance_matrix(input_data_i[['lng', 'lat']], polyg_data_i[['lng', 'lat']])
-        input_data_i.loc[input_data_i.index, 'village_id'] = polyg_data_i.index[
-            np.array([di.argmin() for di in dmat])].copy()
-
         # Add input data to spatiotemporal grid
         input_data_i = input_data_i.groupby(by=['village_id', 'knot'],
                                             as_index=False).sum()[['village_id', 'knot', 'total_cases']]
@@ -94,23 +98,7 @@ def run_function(params: dict):
             gam_flist += [f"total_cases ~ offset(log(population)) + te(lng, lat, knot, bs='gp', m=list(c(2, 2, 2), c(2, 1.5, 2)), d=c(2, 1), k=c(25, 3))"]
         if layer_names is not None:
             gam_flist += ['+'.join([gf] + [f'{i}' for i in layer_names]) for gf in gam_flist]
-        '''
-        gam_flist = []
-        gam_sp = f"total_cases ~ offset(log(population)) + te(lng, lat, bs='gp', m=list(c(2, -1, 2)), d=2, k=25)"
-        gam_flist.append(gam_sp)
 
-        if layer_names is not None:
-            gam_spc = [gam_sp] + [f'{i}' for i in layer_names]
-            gam_spc = '+'.join(gam_spc)
-            gam_flist.append(gam_spc)
-        rho1 = 1.5
-        gam_st = f"total_cases ~ offset(log(population)) + te(lng, lat, knot, bs='gp', m=list(c(2, 2, 2), c(2, {rho1}, 2)), d=c(2, 1), k=c(25, 3))"
-        gam_flist.append(gam_st)
-        if layer_names is not None:
-            gam_stc = [gam_st] + [f'{i}' for i in layer_names]
-            gam_stc = '+'.join(gam_stc)
-            gam_flist.append(gam_stc)
-        '''
         # Fit candidate models and keep the best
         for j, gam_formula in enumerate(gam_flist):
             gam_j = disarm_gears.r_plugins.r_methods.mgcv_fit(data=polyg_series, formula=gam_formula,
@@ -144,7 +132,6 @@ def run_function(params: dict):
         pred_grid.loc[pred_grid_i.index, 'prob_cases'] = prob_cases
         pred_grid.loc[pred_grid_i.index, 'risk_class'] = risk_class
 
-
     #
     # 3. Package output
     #
@@ -154,5 +141,4 @@ def run_function(params: dict):
     output_gdf = geopandas.GeoDataFrame(pred_grid, geometry=geopandas.points_from_xy(pred_grid.lng, pred_grid.lat))
     slimmer_gdf = output_gdf.drop(['lat', 'lng', 'population'], axis=1)
 
-    # return response.get('point_data')
     return json.loads(slimmer_gdf.to_json())
