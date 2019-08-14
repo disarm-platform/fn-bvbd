@@ -5,7 +5,7 @@ functions:
   fn-bvbd-forecast:
     lang: dockerfile
     handler: ./fn-bvbd-forecast
-    image: disarm/fn-bvbd-forecast:0.0.1
+    image: disarm/fn-bvbd-forecast:0.0.2
     environment:
       exec_timeout: 1020
       write_timeout: 1000
