@@ -3,6 +3,5 @@ from preprocess_helpers import write_temp_from_url_or_base64, required_exists, i
 
 def preprocess(params: dict):
     required_exists('point_data', params)
-
-    # Optional, but if exists, must be string
-    is_type('uncertainty_type', params, str)
+    required_exists('observed_periods', params)
+    required_exists('end_date', params)
