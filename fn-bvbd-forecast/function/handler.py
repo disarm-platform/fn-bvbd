@@ -34,7 +34,7 @@ def run_function(params: dict):
     tha_attrib.reset_index(inplace=True, drop=True)
 
     # Format point data
-    gdf = geopandas.GeoDataFrame.from_features(json.loads(point_data))
+    gdf = geopandas.GeoDataFrame.from_features(point_data)
     input_xy = np.vstack([gdf.geometry.x, gdf.geometry.y]).T
     dmat = distance_matrix(input_xy, tha_attrib[['lng', 'lat']])
     gdf['village_id'] = [di.argmin() for di in dmat]
@@ -42,7 +42,7 @@ def run_function(params: dict):
 
     parts = []
     for i, gi in gdf.iterrows():
-        dfi = pd.DataFrame.from_dict(json.loads(gi.features))
+        dfi = pd.DataFrame.from_dict(gi.features)
         dfi['lng'] = gi.geometry.x
         dfi['lat'] = gi.geometry.y
         dfi['village_id'] = gi.name
