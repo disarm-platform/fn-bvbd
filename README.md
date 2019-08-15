@@ -1,4 +1,4 @@
-# fn-bvbd-forecast
+# fn-bvbd
 
 See [`SPECS.md`](./SPECS.md) for algorithm specifications.
 
