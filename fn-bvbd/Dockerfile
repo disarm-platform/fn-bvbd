@@ -1,9 +1,10 @@
+FROM openfaas/of-watchdog:0.5.3 as watchdog
 FROM disarm/geopandas-r-base:1.0.0
 
-RUN mkdir -p /app
-
-COPY ./fwatchdog /usr/bin
+COPY --from=watchdog /fwatchdog /usr/bin/fwatchdog
 RUN chmod +x /usr/bin/fwatchdog
+
+RUN mkdir -p /app
 
 WORKDIR /app
 
