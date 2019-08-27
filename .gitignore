@@ -1,2 +1,5 @@
 template
 build
+*.ipynb
+*.pyc
+.idea/

@@ -58,7 +58,7 @@ def run_function(params: dict):
 
     # Define timeline and spatiotemporal grid
     timeline = disarm_gears.frames.Timeframe(start=None, end=end_date, length=observed_periods, by='day', step=28)
-    input_data['knot'] = timeline.which_knot(np.array(input_data.date))
+    input_data['knot'] = timeline.which_knot(np.array(input_data['date']))
     input_data = input_data.loc[input_data.knot > -1, :]
 
     # Define polygons of observed cases

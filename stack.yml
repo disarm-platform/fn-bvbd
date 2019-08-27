@@ -2,10 +2,10 @@ provider:
   name: faas
   gateway: https://faas.srv.disarm.io
 functions:
-  fn-bvbd-forecast:
+  fn-bvbd:
     lang: dockerfile
     handler: ./fn-bvbd
-    image: disarm/fn-bvbd:0.0.1
+    image: disarm/fn-bvbd:0.0.2
     environment:
       exec_timeout: 1020
       write_timeout: 1000
