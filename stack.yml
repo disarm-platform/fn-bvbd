@@ -5,10 +5,12 @@ functions:
   fn-bvbd:
     lang: dockerfile
     handler: ./fn-bvbd
-    image: disarm/fn-bvbd:0.0.2
+    image: disarm/fn-bvbd:0.1.0
     environment:
       exec_timeout: 1020
       write_timeout: 1000
       read_timeout: 1000
       combine_output: false
       # write_debug: true
+    labels:
+      com.openfaas.scale.zero: true
