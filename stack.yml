@@ -3,9 +3,9 @@ provider:
   gateway: https://faas.srv.disarm.io
 functions:
   fn-bvbd:
-    lang: dockerfile
-    handler: ./fn-bvbd
-    image: disarm/fn-bvbd:0.1.0
+    lang: python-geospatial
+    handler: ./function
+    image: disarm/fn-bvbd:0.2.0
     environment:
       exec_timeout: 1020
       write_timeout: 1000

@@ -1,5 +1,6 @@
-from preprocess_helpers import write_temp_from_url_or_base64, required_exists, is_type
-
+def required_exists(key, params):
+    if key not in params:
+        raise ValueError(f'Required param \'{key}\' not received.')
 
 def preprocess(params: dict):
     required_exists('point_data', params)
